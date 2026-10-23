@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RPG IA"><title>RPG IA</title>
+<style>
+:root{--ink:#12101c;--plum:#241d3a;--card:#1d1830;--amber:#f2b35e;--rose:#e86a7a;--txt:#efe9dd;--mut:#9a93ad;--sans:-apple-system,"SF Pro Text",system-ui,sans-serif;--serif:"New York",Georgia,"Times New Roman",serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--ink);color:var(--txt);font:16px/1.5 var(--sans)}
+body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column}
+.scr{flex:1;overflow-y:auto;padding:16px;display:none}.scr.on{display:block}
+#play.on{display:flex;flex-direction:column;padding:0}
+h1{font:700 26px var(--serif);margin:4px 0 2px}h2{font:700 20px var(--serif);margin:0 0 8px}
+.sub{color:var(--mut);font-size:14px;margin:0 0 14px}
+nav{display:flex;border-top:1px solid #ffffff14;background:#0d0b15}
+nav button{flex:1;background:none;border:0;color:var(--mut);padding:12px 0;font:600 13px var(--sans)}
+nav button.on{color:var(--amber)}
+.ep{border-radius:14px;overflow:hidden;margin-bottom:14px;background:var(--card);border:1px solid #ffffff10}
+.ep .art{height:120px;display:flex;align-items:center;justify-content:center;font-size:52px;letter-spacing:8px}
+.ep .bd{padding:12px 14px}.ep b{font:700 18px var(--serif)}
+.tag{display:inline-block;font-size:12px;padding:2px 9px;border-radius:99px;background:#ffffff12;color:var(--mut);margin:6px 6px 0 0}
+.btn{display:block;width:100%;background:var(--amber);color:#2a1a00;border:0;border-radius:12px;padding:13px;font:700 16px var(--sans);margin-top:12px}
+.btn.g{background:#ffffff14;color:var(--txt)}
+.opt{display:block;width:100%;text-align:left;background:var(--card);color:var(--txt);border:1px solid #ffffff1c;border-radius:12px;padding:12px;margin-top:8px;font:15px/1.4 var(--sans)}
+.opt.sel{border-color:var(--amber)}
+input,textarea,select{width:100%;background:var(--card);color:var(--txt);border:1px solid #ffffff1c;border-radius:10px;padding:11px;font:16px var(--sans);margin:4px 0 10px}
+label{font-size:13px;color:var(--mut)}
+#top{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0d0b15}
+#top .t{flex:1;font:700 15px var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ic{background:#ffffff14;border:0;color:var(--txt);border-radius:9px;padding:7px 10px;font-size:14px}
+#stage{height:92px;display:flex;align-items:center;justify-content:center;font-size:46px;letter-spacing:10px;border-block:6px solid #000;transition:background .6s}
+#stats{display:flex;gap:14px;padding:6px 14px;font-size:12px;color:var(--mut)}
+.bar{display:inline-block;width:46px;height:5px;border-radius:3px;background:#ffffff1c;vertical-align:middle;margin-left:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--amber)}.bar.r i{background:var(--rose)}
+#log{flex:1;overflow-y:auto;padding:6px 14px 10px}
+.nar{font:italic 16px/1.6 var(--serif);color:#d9d2c3;margin:12px 4px}
+.nov{font:17px/1.7 var(--serif);margin:10px 2px}.nov b{color:var(--amber)}
+.row{display:flex;gap:8px;margin:10px 0;align-items:flex-end}.row.me{justify-content:flex-end}
+.av{font-size:26px}.bub{max-width:78%;background:var(--plum);border-radius:16px 16px 16px 4px;padding:9px 12px}
+.me .bub{background:var(--amber);color:#2a1a00;border-radius:16px 16px 4px 16px}
+.bub small{display:block;color:var(--amber);font-weight:700;font-size:12px}
+#ctl{padding:8px 12px 10px;background:#0d0b15;border-top:1px solid #ffffff14}
+#choices .opt{margin-top:6px;padding:10px 12px;font-size:14px}
+#inrow{display:flex;gap:8px;margin-top:8px}#inrow input{margin:0}
+#inrow button{background:var(--amber);border:0;border-radius:10px;padding:0 16px;font-size:18px}
+.ld{color:var(--mut);text-align:center;padding:14px}
+.pb{height:8px;background:#ffffff1c;border-radius:4px;overflow:hidden;margin:8px 0}.pb i{display:block;height:100%;width:0;background:var(--amber)}
+.ach{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #ffffff10}.ach.off{opacity:.4}
+</style></head><body><div id="app">
+<section class="scr on" id="home"></section>
+<section class="scr" id="detail"></section>
+<section class="scr" id="play">
+ <div id="top"><button class="ic" id="back">‹</button><div class="t" id="pt"></div><button class="ic" id="vw">Chat</button><button class="ic" id="fn">🏁</button><button class="ic" id="rg">↻</button></div>
+ <div id="stage"></div><div id="stats"></div><div id="log"></div>
+ <div id="ctl"><div id="choices"></div><div id="inrow"><input id="inp" maxlength="500" placeholder="Fale ou aja como seu personagem…"><button id="go">➤</button></div></div>
+</section>
+<section class="scr" id="me"></section>
+<section class="scr" id="cfg"></section>
+<nav id="nav"><button data-s="home" class="on">Início</button><button data-s="me">Protagonista</button><button data-s="cfg">Ajustes</button></nav>
+</div>
+<script>
+const $=s=>document.querySelector(s),E=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.textContent=h;return e};
+const EPS=[
+{id:"eclipse",t:"Academia do Eclipse",tags:["Fantasia","Mistério"],em:"🌘🏰",g:"linear-gradient(135deg,#2b1b52,#0f2a4a)",
+ ch:[{n:"Kael",e:"🧙"},{n:"Lira",e:"🦊"}],
+ pro:["Você chega atrasado à academia na noite do eclipse. Os portões já se fecharam.","Você acorda na biblioteca proibida com um livro que sussurra seu nome."],
+ pr:"Academia de magia onde cada eclipse apaga a memória de um aluno. Kael é um veterano misterioso; Lira é uma colega curiosa e sarcástica."},
+{id:"trem",t:"Último Trem para Marte",tags:["Sci-fi","Thriller"],em:"🚀🔴",g:"linear-gradient(135deg,#4a1d1d,#1a1a2e)",
+ ch:[{n:"Capitã Vox",e:"👩‍🚀"},{n:"IRIS",e:"🤖"}],
+ pro:["O trem orbital parte em 10 minutos e alguém trocou seu bilhete.","Um alarme soa: há um impostor entre os 12 passageiros."],
+ pr:"Trem orbital rumo a Marte com uma conspiração a bordo. Capitã Vox é dura e desconfiada; IRIS é a IA do trem, educada e com segredos."},
+{id:"cafe",t:"Café Meia-Noite",tags:["Romance","Cotidiano"],em:"☕🌙",g:"linear-gradient(135deg,#5a3a2a,#2a1f3a)",
+ ch:[{n:"Hana",e:"👩‍🍳"},{n:"Theo",e:"🎸"}],
+ pro:["Você entra num café que só abre depois da meia-noite, fugindo da chuva.","Você é o novo funcionário e o turno da madrugada começa agora."],
+ pr:"Café aconchegante que só abre à noite. Hana é a dona, gentil e reservada; Theo é um músico que toca ali toda noite e provoca com carinho."}];
+const ALL=()=>[...EPS,...(S.custom||[])];
+const K="rpgia_v1";let S=JSON.parse(localStorage.getItem(K)||localStorage.getItem("frontia_v1")||"null")||{pf:{name:"Você",bio:""},saves:{},ach:[],stars:500,cfg:{engine:"gemma",view:"chat",url:"",sug:false},v2:1};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+if(!S.v2){if(S.cfg.engine==="demo")S.cfg.engine="gemma";S.cfg.sug=false;S.v2=1;save()}
+const show=id=>{document.querySelectorAll(".scr").forEach(s=>s.classList.toggle("on",s.id===id));$("#nav").style.display=id==="play"?"none":"flex";document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.s===id))};
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{({home:home,me:me,cfg:cfg})[b.dataset.s]()});
+const ACH={first:["🎬","Primeira cena","Comece um episódio"],t10:["📖","Leitor dedicado","Jogue 10 turnos"],end:["🏁","Final alcançado","Chegue a um desfecho"],ai:["🧠","Mente de Gemma","Jogue com a IA Gemma"]};
+const unlock=k=>{if(!S.ach.includes(k)){S.ach.push(k);S.stars+=100;save();toast("🏆 "+ACH[k][1]+" (+100 ★)")}};
+function toast(t){const d=E("div","",t);Object.assign(d.style,{position:"fixed",top:"calc(env(safe-area-inset-top) + 10px)",left:"50%",transform:"translateX(-50%)",background:"#f2b35e",color:"#2a1a00",padding:"8px 14px",borderRadius:"99px",font:"700 13px sans-serif",zIndex:9});document.body.append(d);setTimeout(()=>d.remove(),2600)}
+function home(){show("home");const h=$("#home");h.replaceChildren(E("h1","","RPG IA"),E("p","sub","Seja o herói da sua história · ★ "+S.stars));
+ const nb=E("button","btn","＋ Nova história");nb.style.marginTop="0";nb.style.marginBottom="14px";nb.onclick=create;h.append(nb);
+ ALL().forEach(e=>{const c=E("div","ep"),a=E("div","art",e.em);a.style.background=e.g;const b=E("div","bd");b.append(E("b","",e.t),E("br"));e.tags.forEach(t=>b.append(E("span","tag",t)));
+  const sv=S.saves[e.id];if(sv)b.append(E("div","sub","Turno "+sv.turn+(sv.end?" · Final: "+sv.end:" · em andamento")));
+  c.append(a,b);c.onclick=()=>detail(e);h.append(c)})}
+let sel=0;
+function detail(e){show("detail");const d=$("#detail");d.replaceChildren();const bk=E("button","ic","‹ Voltar");bk.onclick=home;d.append(bk,E("h1","",e.t),E("p","sub",e.pr));
+ const sv=S.saves[e.id];if(sv){const b=E("button","btn",sv.end?"Rever final":"Continuar");b.onclick=()=>play(e);d.append(b)}
+ d.append(E("h2","","Escolha o prólogo"));sel=0;e.pro.forEach((p,i)=>{const o=E("button","opt"+(i?"":" sel"),p);o.onclick=()=>{sel=i;[...d.querySelectorAll(".opt")].forEach((x,j)=>x.classList.toggle("sel",j===i))};d.append(o)});
+ if(e.custom){const x=E("button","btn g","Excluir esta história");x.onclick=()=>{if(confirm("Excluir história e save?")){S.custom=S.custom.filter(c=>c.id!==e.id);delete S.saves[e.id];save();home()}};d.append(x)}
+ const b=E("button","btn g",sv?"Recomeçar":"Começar");b.onclick=()=>{S.saves[e.id]={log:[],hist:[],st:{afeicao:3,tensao:3},turn:0,end:null,pro:e.pro[sel],ch:[]};save();play(e,true)};d.append(b)}
+function create(){show("detail");const d=$("#detail");d.replaceChildren();const bk=E("button","ic","‹ Voltar");bk.onclick=home;d.append(bk,E("h1","","Nova história"),E("p","sub","Crie o mundo e jogue com a IA."));
+ const f=(l,ph,r)=>{const x=r?E("textarea"):E("input");if(r)x.rows=r;x.placeholder=ph;d.append(E("label","",l),x);return x};
+ const t=f("Título","Ex.: A Vila dos Corvos"),em=f("Emojis da capa","Ex.: 🐦‍⬛🌲"),tg=f("Tags (separe por vírgula)","Ex.: Terror, Mistério"),pr=f("Mundo e premissa","Cenário, tom e conflito da história",4),ch=f("Personagens (um por linha: nome, emoji, personalidade)","Corvo, 🐦‍⬛, misterioso e irônico",4),pp=f("Prólogos (um por linha)","Você chega à vila ao anoitecer…",3),fm=f("Desfecho: o que precisa acontecer para a história acabar","Ex.: O protagonista descobre quem é o traidor e decide o destino dele",3);
+ const b=E("button","btn","Salvar e abrir");b.onclick=()=>{const T=t.value.trim(),P=pr.value.trim();const F=fm.value.trim();if(!T||!P||!F){toast("Preencha título, premissa e desfecho");return}
+  const cs=ch.value.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(",");return{n:p[0].trim().slice(0,24),e:(p[1]||"").trim()||"💬",p:p.slice(2).join(",").trim()}});if(!cs.length)cs.push({n:"Guia",e:"🎭",p:"narrador amigável"});
+  const G=["#2b1b52,#0f2a4a","#4a1d1d,#1a1a2e","#5a3a2a,#2a1f3a","#1d4a3a,#14122a","#3a2a5a,#5a2a3a"];let h=0;for(const c of T)h+=c.charCodeAt(0);
+  const e={id:"c"+Date.now(),custom:true,fim:F,t:T,tags:tg.value.split(",").map(x=>x.trim()).filter(Boolean).slice(0,4),em:em.value.trim()||"📖",g:"linear-gradient(135deg,"+G[h%G.length]+")",ch:cs.map(c=>({n:c.n,e:c.e})),
+   pro:pp.value.split("\n").map(x=>x.trim()).filter(Boolean),pr:P+" Personagens: "+cs.map(c=>c.n+(c.p?" ("+c.p+")":"")).join("; ")+"."};if(!e.pro.length)e.pro=["A história começa."];
+  (S.custom=S.custom||[]).push(e);save();detail(e)};d.append(b)}
+function me(){show("me");const m=$("#me");m.replaceChildren(E("h1","","Protagonista"),E("p","sub","Seu nome e personalidade entram em todos os episódios."));
+ const n=E("input");n.value=S.pf.name;n.oninput=()=>{S.pf.name=n.value;save()};const b=E("textarea");b.rows=4;b.value=S.pf.bio;b.placeholder="Ex.: curioso, teimoso, sempre faz piada quando está nervoso";b.oninput=()=>{S.pf.bio=b.value;save()};
+ m.append(E("label","","Nome"),n,E("label","","Perfil"),b,E("h2","","Conquistas"));
+ Object.entries(ACH).forEach(([k,v])=>{const r=E("div","ach"+(S.ach.includes(k)?"":" off"));r.append(E("span","av",v[0]));const x=E("div");x.append(E("b","",v[1]),E("div","sub",v[2]));r.append(x);m.append(r)})}
+function cfg(){show("cfg");const c=$("#cfg");c.replaceChildren(E("h1","","Ajustes"),E("p","sub","Escolha quem escreve a história."));
+ const s=E("select");[["demo","Teste rápido (sem IA, roteiro fixo)"],["gemma","Gemma no aparelho (WebGPU)"],["url","Gemma em servidor local (Ollama/LM Studio)"]].forEach(([v,t])=>{const o=E("option","",t);o.value=v;s.append(o)});s.value=S.cfg.engine;s.onchange=()=>{S.cfg.engine=s.value;save();cfg()};
+ c.append(E("label","","Motor da história"),s);
+ if(S.cfg.engine==="gemma"){c.append(E("p","sub","Na primeira vez baixa ~1,4 GB do modelo Gemma 2 2B e guarda no aparelho. Depois funciona sem internet. Exige iPhone com iOS 26+ (WebGPU) e Safari."));const b=E("button","btn","Baixar / carregar modelo");const p=E("div","pb"),i=E("i");p.append(i);const st=E("div","sub","");b.onclick=async()=>{try{await loadGemma((r)=>{i.style.width=(r.progress*100)+"%";st.textContent=r.text});st.textContent="Modelo pronto ✔"}catch(e){st.textContent="Erro: "+e.message}};c.append(b,p,st)}
+ if(S.cfg.engine==="url"){const u=E("input");u.value=S.cfg.url;u.placeholder="http://192.168.0.10:11434/v1/chat/completions";u.oninput=()=>{S.cfg.url=u.value;save()};c.append(E("label","","URL compatível com OpenAI (modelo gemma2:2b)"),u)}
+ const sg=E("select");[["0","Desligadas (só você escreve)"],["1","Ligadas (3 sugestões por turno)"]].forEach(([k,t])=>{const o=E("option","",t);o.value=k;sg.append(o)});sg.value=S.cfg.sug?"1":"0";sg.onchange=()=>{S.cfg.sug=sg.value==="1";save()};c.append(E("label","","Sugestões de resposta"),sg);
+ const v=E("select");[["chat","Visão Chat (balões)"],["novel","Visão Romance (parágrafos)"]].forEach(([k,t])=>{const o=E("option","",t);o.value=k;v.append(o)});v.value=S.cfg.view;v.onchange=()=>{S.cfg.view=v.value;save()};c.append(E("label","","Visão de leitura"),v);
+ const r=E("button","btn g","Apagar todos os dados");r.onclick=()=>{if(confirm("Apagar saves e conquistas?")){localStorage.removeItem(K);location.reload()}};c.append(r)}
+/* ---- motores ---- */
+let eng=null;
+async function loadGemma(cb){if(eng)return eng;if(!navigator.gpu)throw new Error("Este navegador não tem WebGPU. Use iOS 26+ no Safari ou o servidor local em Ajustes.");const w=await import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm");eng=await w.CreateMLCEngine("gemma-2-2b-it-q4f16_1-MLC",{initProgressCallback:cb||(()=>{})});return eng}
+const ACT=u=>/^\[SISTEMA\]/.test(u)?u:(S.pf.name||"Protagonista")+" (jogador) diz ou faz: "+u+"\n(Reaja a isso; a história muda por causa disso.)";
+const SYS=(e)=>`Você é o motor de um RP (roleplay) em português do Brasil. Você interpreta TODOS os personagens que não são o jogador e narra o mundo. O jogador interpreta o protagonista.
+Episódio: ${e.t}. ${e.pr}
+Protagonista (controlado pelo jogador): ${S.pf.name||"Você"}. ${S.pf.bio||""}
+Personagens que você interpreta, cada um com personalidade, desejos e segredos próprios: ${e.ch.map(c=>c.n).join(", ")}.
+Formato da resposta: 2 a 5 linhas curtas. Cada linha é "NARRADOR: texto" (no máximo uma, bem curta) ou "NomeDoPersonagem: fala ou ação". Os personagens têm iniciativa: discordam, mentem, mudam de ideia e agem por conta própria.${S.cfg.sug?"\nDepois escreva:\nESCOLHAS:\n1) opção curta\n2) opção curta\n3) opção curta":""}
+Última linha: STATUS: afeicao=+1 tensao=-1
+REGRA PRINCIPAL: o que o jogador escrever (fala ou ação) SEMPRE muda o rumo da história. Reaja de forma concreta e coerente, nunca ignore. Nunca escreva falas nem ações do protagonista.
+${e.fim?"DESFECHO DEFINIDO PELO CRIADOR: a história só termina quando isto acontecer: "+e.fim+". Não encerre antes; conduza a trama até lá. Quando acontecer, narre o momento e termine com a linha FIM: título do final.":"Após cerca de 8 turnos conduza a um desfecho e termine com a linha FIM: título do final."}`;
+async function ai(e,sv,user,regen){const msgs=sv.hist.slice(-10);let ask=user;const sysT=SYS(e);
+ if(S.cfg.engine==="demo")return demo(e,sv,user);
+ const m=[{role:"user",content:sysT+"\n\nPrólogo: "+sv.pro+"\n\nComece a história."},...msgs.length?msgs:[]];if(user&&!regen)m.push({role:"user",content:ACT(user)});
+ const fix=[];for(const x of m){const l=fix[fix.length-1];if(l&&l.role===x.role)l.content+="\n"+x.content;else fix.push({...x})}
+ if(S.cfg.engine==="gemma"){const g=await loadGemma(r=>{$("#log").lastChild&&($("#log").lastChild.textContent="Carregando Gemma… "+Math.round(r.progress*100)+"%")});const r=await g.chat.completions.create({messages:fix,max_tokens:420,temperature:.9});return r.choices[0].message.content}
+ const r=await fetch(S.cfg.url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"gemma2:2b",messages:fix,max_tokens:420,temperature:.9})});const j=await r.json();return j.choices[0].message.content}
+const DEMO=[
+ (e,p)=>`NARRADOR: ${p}\n${e.ch[0].n}: Então é você. Estávamos esperando.\nESCOLHAS:\n1) Perguntar quem está esperando\n2) Desconfiar e recuar\n3) Sorrir e fingir que sabe\nSTATUS: afeicao=+0 tensao=+1`,
+ (e)=>`NARRADOR: O ambiente muda de tom. ${(e.ch[1]||e.ch[0]).n} aparece ao fundo, observando em silêncio.\n${(e.ch[1]||e.ch[0]).n}: Cuidado com o que você diz aqui.\nESCOLHAS:\n1) Confiar em ${(e.ch[1]||e.ch[0]).n}\n2) Confiar em ${e.ch[0].n}\n3) Não confiar em ninguém\nSTATUS: afeicao=+1 tensao=+1`,
+ (e)=>`NARRADOR: Uma decisão se aproxima. Ninguém parece disposto a esperar.\n${e.ch[0].n}: Escolha agora.\nESCOLHAS:\n1) Agir com coragem\n2) Agir com cautela\n3) Pedir mais tempo\nSTATUS: afeicao=+1 tensao=+2`,
+ (e)=>`NARRADOR: Tudo se encaixa e o último segredo vem à tona.\n${(e.ch[1]||e.ch[0]).n}: Eu sempre soube que seria você.\nFIM: O herói que escolheu a si mesmo\nSTATUS: afeicao=+2 tensao=-3`];
+function demo(e,sv,u){const n=Math.min(sv.turn,3);let r=DEMO[n](e,sv.pro);if(e.fim)r=r.replace(/FIM:.*/,"FIM: "+e.fim.slice(0,60));
+ if(u&&!(sv.prev||[]).includes(u)){r=r.replace("NARRADOR: ","NARRADOR: Você decide: "+u+". Isso muda o clima da cena. ");let a=0,t=0;if(/atac|bat|fug|minta|ment|ameaç|roub|grit/i.test(u)){t=2;a=-1}if(/abra|ajud|confi|beij|agrade|sorri|prote/i.test(u)){a=2;t=-1}r+="\nSTATUS: afeicao="+(a>=0?"+":"")+a+" tensao="+(t>=0?"+":"")+t}
+ return r}
+/* ---- jogo ---- */
+let cur=null,busy=false;
+function parse(txt){const o={lines:[],ch:[],st:{},end:null};let inC=false;
+ txt.split("\n").map(l=>l.trim()).filter(Boolean).forEach(l=>{let m;
+  if(/^ESCOLHAS/i.test(l)){inC=true;return}
+  if(m=l.match(/^FIM\s*:\s*(.+)/i)){o.end=m[1];return}
+  if(m=l.match(/^STATUS\s*:\s*(.+)/i)){(m[1].match(/(afeicao|tensao)\s*=\s*([+-]?\d)/gi)||[]).forEach(x=>{const [k,v]=x.split("=");o.st[k.trim().toLowerCase()]=+v});return}
+  if(inC&&(m=l.match(/^\d[).]\s*(.+)/))){o.ch.push(m[1]);return}
+  if(m=l.match(/^([^:]{1,24}):\s*(.+)/))o.lines.push({w:m[1].replace(/\*/g,""),t:m[2].replace(/\*/g,"")});else if(!inC)o.lines.push({w:"NARRADOR",t:l.replace(/\*/g,"")})});
+ return o}
+function render(e,sv){const L=$("#log");L.replaceChildren();const nov=S.cfg.view==="novel";$("#vw").textContent=nov?"Chat":"Romance";
+ sv.log.forEach(x=>{const isN=/^narrador$/i.test(x.w),me=x.w==="__me";
+  if(nov){const p=E("p","nov");if(isN)p.textContent=x.t;else{p.append(E("b","",(me?(S.pf.name||"Você"):x.w)+": "),document.createTextNode(x.t))}L.append(p)}
+  else if(isN)L.append(E("div","nar",x.t));
+  else{const r=E("div","row"+(me?" me":""));const c=e.ch.find(c=>c.n===x.w);if(!me)r.append(E("span","av",c?c.e:"💬"));const b=E("div","bub");if(!me)b.append(E("small","",x.w));b.append(document.createTextNode(x.t));r.append(b);L.append(r)}});
+ L.scrollTop=L.scrollHeight;
+ const st=$("#stats");st.replaceChildren();[["Afeição","afeicao",""],["Tensão","tensao","r"]].forEach(([n,k,c])=>{const s=E("span","",n);const b=E("span","bar "+c);const i=E("i");i.style.width=Math.max(0,Math.min(10,sv.st[k]))*10+"%";b.append(i);s.append(b);st.append(s)});
+ const C=$("#choices");C.replaceChildren();if(sv.end){C.append(E("div","sub","🏁 Final: "+sv.end))}else if(S.cfg.sug)sv.ch.forEach(c=>{const b=E("button","opt",c);b.onclick=()=>turn(c);C.append(b)});
+ $("#inrow").style.display=sv.end?"none":"flex"}
+function play(e,fresh){cur=e;const sv=S.saves[e.id];show("play");if(S.cfg.engine==="demo")toast("Modo teste: sem IA. Troque em Ajustes");$("#pt").textContent=e.t;$("#stage").style.background=e.g;$("#stage").textContent=e.ch.map(c=>c.e).join("");
+ if(fresh&&!sv.log.length){unlock("first");sv.log.push({w:"NARRADOR",t:sv.pro});save();render(e,sv);next(e,sv,null)}else render(e,sv)}
+async function next(e,sv,user,regen){if(busy)return;busy=true;const L=$("#log");L.append(E("div","ld","A história continua…"));L.scrollTop=L.scrollHeight;
+ try{const raw=await ai(e,sv,user,regen);const o=parse(raw);if(!o.lines.length)throw new Error("Resposta vazia. Tente ↻.");
+  sv.last=sv.log.length;o.lines.forEach(l=>sv.log.push(l));sv.ch=S.cfg.sug?(o.ch.length?o.ch:["Continuar","Olhar ao redor","Perguntar mais"]):[];
+  sv.st.afeicao=(sv.st.afeicao||0)+(o.st.afeicao||0);sv.st.tensao=(sv.st.tensao||0)+(o.st.tensao||0);
+  if(!regen){if(user)sv.hist.push({role:"user",content:ACT(user)});sv.hist.push({role:"assistant",content:raw})}else sv.hist.push({role:"assistant",content:raw});
+  sv.turn++;if(sv.turn>=10)unlock("t10");if(S.cfg.engine!=="demo")unlock("ai");if(o.end||(!e.fim&&sv.turn>=12)||sv.turn>=40){sv.end=o.end||"Fim da jornada";unlock("end")}
+  save()}catch(err){L.append(E("div","ld","⚠ "+err.message))}
+ busy=false;render(e,sv)}
+function turn(t){t=(t||"").trim();if(!t||busy)return;const sv=S.saves[cur.id];sv.log.push({w:"__me",t});$("#inp").value="";sv.prev=sv.ch;sv.ch=[];render(cur,sv);next(cur,sv,t)}
+$("#go").onclick=()=>turn($("#inp").value);$("#inp").onkeydown=e=>{if(e.key==="Enter")turn($("#inp").value)};
+$("#fn").onclick=()=>{const sv=S.saves[cur.id];if(!sv.end&&!busy&&confirm("Pedir à IA para levar a história ao final agora?"))next(cur,sv,"[SISTEMA] Conduza a história ao desfecho agora, narre o final e termine com a linha FIM: título do final.")};
+$("#back").onclick=home;$("#vw").onclick=()=>{S.cfg.view=S.cfg.view==="novel"?"chat":"novel";save();render(cur,S.saves[cur.id])};
+$("#rg").onclick=()=>{const sv=S.saves[cur.id];if(busy||!sv.turn||sv.end&&0)return;sv.log.length=sv.last;sv.hist.pop();sv.turn--;sv.end=null;sv.ch=[];save();render(cur,sv);const u=null;next(cur,sv,u,true)};
+home();
+</script></body></html>
