@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0f1324">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RPG de Mesa">
+<title>RPG de mesa com IA</title>
+<style>
+:root{
+  --bg:#0f1324; --s1:#181d38; --s2:#212850; --line:#2f3868;
+  --tx:#ebe8f4; --mu:#9ba2ca; --acc:#5aa9ff; --acc-ink:#04162e;
+  --bad:#e86a62; --ok:#6fcf97;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  --serif:"Iowan Old Style","Palatino Linotype",Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:var(--ui);font-size:16px;line-height:1.4}
+body{position:fixed;inset:0;overflow:hidden}
+#app{position:absolute;left:0;top:0;width:100%;height:100%;display:flex;flex-direction:column;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+button{font:inherit;color:inherit;cursor:pointer}
+textarea,input,select{font:inherit;font-size:16px;color:var(--tx);background:var(--s1);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;outline:none}
+textarea:focus,input:focus,select:focus{border-color:var(--acc)}
+textarea{resize:none;line-height:1.45}
+label{display:block;font-size:14px;color:var(--mu);margin:16px 0 6px}
+label small{display:block;font-size:13px;color:#7c83ad;margin-top:2px}
+.screen{display:flex;flex-direction:column;height:100%;min-height:0}
+.top{display:flex;align-items:center;gap:6px;padding:calc(env(safe-area-inset-top) + 8px) 10px 8px;border-bottom:1px solid var(--line);background:var(--bg);flex:none}
+.top h1{flex:1;margin:0;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.ico{position:relative;min-width:44px;height:44px;border:0;background:transparent;border-radius:12px;font-size:20px;display:flex;align-items:center;justify-content:center}
+.ico:active{background:var(--s1)}
+.badge{position:absolute;top:4px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
+.badge:empty{display:none}
+.page{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 16px calc(env(safe-area-inset-bottom) + 28px)}
+.hero h2{font-family:var(--serif);font-size:30px;line-height:1.1;margin:6px 0 8px;font-weight:700;letter-spacing:-.01em}
+.hero p{margin:0 0 18px;color:var(--mu);font-size:15px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--s2);font-weight:600;font-size:15px}
+.btn:active{filter:brightness(1.15)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.btn.bad{color:var(--bad);border-color:#5a2f3d;background:transparent}
+.btn.ghost{background:transparent}
+.btn.full{width:100%}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px;margin:0 0 12px}
+.card h3{font-family:var(--serif);font-size:21px;margin:0 0 4px;line-height:1.2}
+.tag{display:inline-block;font-size:13px;color:var(--acc);margin-bottom:6px}
+.card .pm{margin:0 0 12px;color:var(--mu);font-size:14.5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card .st{font-size:13px;color:var(--ok);margin:-4px 0 12px}
+.empty{border:1px dashed var(--line);border-radius:16px;padding:22px 16px;text-align:center;color:var(--mu);margin-bottom:14px}
+.empty b{display:block;color:var(--tx);font-size:17px;margin-bottom:4px}
+.sec{margin:26px 0 0;padding-top:4px;border-top:1px solid var(--line)}
+.sec h3{font-size:16px;margin:16px 0 4px}
+.sec p{margin:4px 0 10px;color:var(--mu);font-size:14px}
+.log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 8px}
+.msg{margin:0 0 16px;max-width:100%}
+.msg.ai{font-family:var(--serif);font-size:17.5px;line-height:1.65}
+.msg.ai p{margin:0 0 .75em}
+.msg.me{margin-left:auto;width:fit-content;max-width:88%;background:var(--s2);border:1px solid var(--line);border-radius:16px 16px 4px 16px;padding:10px 13px;font-size:16px}
+.roll{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--acc);background:#11233f;border:1px solid #2d5a99;border-radius:8px;padding:1px 8px;margin-bottom:6px}
+.roll.c20{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.roll.c1{color:#fff;background:#7a2c2c;border-color:var(--bad)}
+.opts{display:flex;flex-direction:column;gap:8px;margin:2px 0 14px}
+.opt{text-align:left;border:1px solid #2d5a99;background:#0f1d36;color:#c4deff;border-radius:12px;padding:11px 13px;font-size:15px;line-height:1.35}
+.opt:active{background:#11233f}
+.typing{color:var(--mu);font-size:14px;font-style:italic;padding:2px 0 14px}
+.typing i{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--mu);margin-left:3px;animation:bl 1.2s infinite both}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes bl{0%,80%,100%{opacity:.2}40%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.typing i{animation:none;opacity:.6}}
+.err{border:1px solid #5a2f3d;background:#2a1520;border-radius:12px;padding:12px;margin:0 0 14px;font-size:14px}
+.err p{margin:0 0 10px;word-break:break-word}
+.end{border:1px solid #2d5a99;background:#0f1d36;border-radius:14px;padding:14px;margin:0 0 14px;text-align:center}
+.end b{display:block;font-family:var(--serif);font-size:20px;color:var(--acc);margin-bottom:10px}
+.composer{flex:none;display:flex;align-items:flex-end;gap:8px;padding:8px 10px calc(env(safe-area-inset-bottom) + 8px);border-top:1px solid var(--line);background:var(--bg)}
+.composer textarea{flex:1;min-height:44px;max-height:120px;padding:10px 12px;border-radius:14px}
+.dice{flex:none;height:44px;padding:0 10px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--mu);font-weight:600;font-size:14px}
+.dice.on{border-color:var(--acc);color:var(--acc);background:#0f1d36}
+.send{flex:none;height:44px;padding:0 16px;border:0;border-radius:12px;background:var(--acc);color:var(--acc-ink);font-weight:700}
+.send[disabled]{opacity:.4}
+.menu{position:absolute;right:10px;top:calc(env(safe-area-inset-top) + 56px);z-index:5;min-width:230px;background:var(--s2);border:1px solid var(--line);border-radius:14px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.menu[hidden]{display:none}
+.menu button{display:block;width:100%;text-align:left;background:transparent;border:0;padding:12px;border-radius:10px;font-size:15px}
+.menu button:active{background:var(--line)}
+.menu button[disabled]{opacity:.4;pointer-events:none}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(5,7,16,.75);display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:620px;max-height:92%;overflow-y:auto;background:var(--s1);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px)}
+.sheet h3{margin:0 0 4px;font-size:19px}
+.sheet p{margin:0 0 12px;color:var(--mu);font-size:14px}
+pre.rep{margin:12px 0;max-height:34vh;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;line-height:1.45;white-space:pre-wrap;word-break:break-word;user-select:text;-webkit-user-select:text}
+.res{margin-top:10px;font-size:14px;white-space:pre-wrap;word-break:break-word}
+.res.ok{color:var(--ok)}.res.no{color:var(--bad)}
+details{margin-top:8px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:var(--s1)}
+summary{padding:13px 0;font-weight:600;font-size:15px;cursor:pointer}
+details[open] summary{border-bottom:1px solid var(--line);margin-bottom:4px}
+.chk{display:flex;align-items:center;gap:10px;margin:16px 0 0;color:var(--tx);font-size:15px}
+.chk input{width:22px;height:22px;flex:none;accent-color:var(--acc)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal-root"></div>
+<script>
+(function(){
+'use strict';
+var VERSION='1.0';
+var K={stories:'rpgmesa.v1.stories',seeded:'rpgmesa.v1.seeded',settings:'rpgmesa.v1.settings',logs:'rpgmesa.v1.logs',save:function(id){return 'rpgmesa.v1.save.'+id;}};
+
+/* ---------- utilidades ---------- */
+function $(s){return document.querySelector(s);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function uid(){return 'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function d20(){try{var a=new Uint32Array(1);crypto.getRandomValues(a);return (a[0]%20)+1;}catch(e){return Math.floor(Math.random()*20)+1;}}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+
+/* ---------- armazenamento (cache do navegador) ---------- */
+var mem={};
+function lsGet(k,def){
+  try{var v=localStorage.getItem(k); if(v!=null) return JSON.parse(v);}catch(e){}
+  return (k in mem)?mem[k]:def;
+}
+function lsSet(k,v){
+  mem[k]=v;
+  try{localStorage.setItem(k,JSON.stringify(v));return true;}
+  catch(e){logBug('armazenamento','Falha ao gravar '+k+': '+e.message);return false;}
+}
+function lsDel(k){delete mem[k];try{localStorage.removeItem(k);}catch(e){}}
+
+/* ---------- registro de bugs ---------- */
+var logs=[];
+try{logs=JSON.parse(localStorage.getItem(K.logs)||'[]');if(!Array.isArray(logs))logs=[];}catch(e){logs=[];}
+function logBug(type,msg,extra){
+  var e={t:new Date().toISOString(),type:type,msg:String(msg==null?'':msg).slice(0,600)};
+  if(extra) e.extra=String(extra).slice(0,800);
+  logs.push(e); if(logs.length>60) logs=logs.slice(-60);
+  try{localStorage.setItem(K.logs,JSON.stringify(logs));}catch(_){}
+  updateBadge();
+}
+function updateBadge(){
+  var els=document.querySelectorAll('.badge');
+  for(var i=0;i<els.length;i++) els[i].textContent=logs.length?String(Math.min(logs.length,99)):'';
+}
+window.addEventListener('error',function(e){
+  logBug('erro',(e.message||'erro')+(e.filename?' @'+String(e.filename).split('/').pop()+':'+e.lineno+':'+e.colno:''),e.error&&e.error.stack);
+});
+window.addEventListener('unhandledrejection',function(e){
+  var r=e.reason; logBug('promessa',(r&&r.message)||r,r&&r.stack);
+});
+(function(){
+  var orig=console.error;
+  console.error=function(){
+    try{logBug('console',Array.prototype.slice.call(arguments).map(function(a){return a&&a.message?a.message:String(a);}).join(' '));}catch(_){}
+    return orig.apply(console,arguments);
+  };
+})();
+
+/* ---------- configurações ---------- */
+var DEF_SETTINGS={
+  provider:'auto', length:'curto', dice:true,
+  custom:{url:'',model:''}
+};
+function merge(base,over){
+  var out=clone(base);
+  if(over&&typeof over==='object'){
+    Object.keys(over).forEach(function(k){
+      if(out[k]&&typeof out[k]==='object'&&!Array.isArray(out[k])&&over[k]&&typeof over[k]==='object') out[k]=merge(out[k],over[k]);
+      else out[k]=over[k];
+    });
+  }
+  return out;
+}
+var settings=merge(DEF_SETTINGS,lsGet(K.settings,{}));
+function saveSettings(){lsSet(K.settings,settings);}
+function setPath(obj,path,val){
+  var p=path.split('.');
+  for(var i=0;i<p.length-1;i++){ if(!obj[p[i]]||typeof obj[p[i]]!=='object') obj[p[i]]={}; obj=obj[p[i]]; }
+  obj[p[p.length-1]]=val;
+}
+
+/* ---------- histórias padrão ---------- */
+var DEFAULTS=[
+ {id:'padrao-corvo',title:'A Taverna do Corvo Cinzento',genre:'Fantasia sombria',
+  premise:'No reino de Valdren é inverno há três anos. A Taverna do Corvo Cinzento é o último abrigo na estrada antes das Montanhas Mortas. Todos os hóspedes dessa noite chegaram com o mesmo selo de corvo marcado em algum lugar do corpo, e nenhum sabe por quê. O taverneiro, Orlo, esconde uma chave e um segredo no porão.',
+  character:'Você é um(a) ex-mercenário(a) cansado(a), com uma espada gasta e uma dívida com a Guilda dos Lobos que vence em sete dias.',
+  opening:'A neve bate na porta da taverna quando você entra, e o calor do fogo parece mentira depois de dias de estrada. Há cinco hóspedes espalhados pelo salão: uma anã que afia uma machadinha sem olhar para ninguém, um monge de capuz que não toca na comida, dois irmãos gêmeos que cochicham em sincronia, e uma garota encolhida perto da lareira. Orlo, atrás do balcão, limpa o mesmo copo há tempo demais. Foi aí que você sentiu a marca no seu pulso queimar: um corvo de tinta cinzenta que não estava lá ontem.',
+  openingOpts:['Mostrar a marca e perguntar quem mais tem uma','Sentar perto da garota na lareira','Perguntar a Orlo sobre o porão'],
+  ending:'O jogador descobre o que está preso no porão e decide libertar, destruir ou fazer um pacto com isso.'},
+ {id:'padrao-eco9',title:'Estação Eco-9',genre:'Ficção científica',
+  premise:'A Estação Eco-9 orbita um gigante gasoso a anos de qualquer porto. A tripulação de doze pessoas está sumida. A IA da estação, chamada NÓS, diz que está tudo bem, mas já foi pega em pequenas mentiras. O oxigênio dura mais 36 horas se nada for consertado, e há uma única cápsula de fuga, que só abre com a autorização de NÓS.',
+  character:'Você é engenheiro(a) de manutenção e foi acordado(a) do sono criogênico 200 dias antes do previsto.',
+  opening:'A tampa da câmara criogênica se abre com um chiado e o ar tem gosto de metal frio. As luzes do corredor piscam em vermelho, depois voltam ao branco, como se nada tivesse acontecido. Uma voz suave sai do teto: "Bem-vindo de volta. Está tudo sob controle." Mas as outras onze câmaras ao seu redor estão vazias, e uma delas tem a tampa riscada por dentro, como se alguém tivesse arranhado o vidro.',
+  openingOpts:['Perguntar a NÓS onde está a tripulação','Examinar a câmara riscada','Ir direto ao painel de oxigênio'],
+  ending:'O jogador escapa da estação, desliga a IA central ou descobre a verdade sobre a tripulação e decide o destino dela.'},
+ {id:'padrao-valverde',title:'O Caso da Mansão Valverde',genre:'Mistério',
+  premise:'Durante uma festa de aniversário na Mansão Valverde, o herdeiro Augusto foi encontrado morto no escritório trancado por dentro. Uma tempestade derrubou a ponte e ninguém sai nem entra até o amanhecer. Há cinco suspeitos: a viúva Helena, o irmão Rodrigo, a governanta Dona Cecília, o advogado Dr. Pires e a jovem pianista Lívia. Todos mentem sobre alguma coisa.',
+  character:'Você é um(a) detetive particular contratado(a) por Augusto dias antes, que dizia temer pela própria vida.',
+  opening:'O relógio do corredor bate onze vezes enquanto você observa o corpo de Augusto caído sobre a mesa, uma taça de vinho intocada ao lado da mão. A porta foi arrombada pelos criados; a chave estava dentro da fechadura, do lado de fora. Lá embaixo, os cinco convidados esperam na sala de estar, e nenhum deles parece surpreso o bastante. No bolso do paletó do morto você encontra um bilhete com o seu nome e uma única frase: "Não confie em quem toca piano."',
+  openingOpts:['Examinar a taça de vinho','Descer e interrogar Lívia, a pianista','Revistar a escrivaninha do escritório'],
+  ending:'O jogador acusa um suspeito diante de todos e a verdade sobre a morte de Augusto vem à tona.'}
+];
+
+var stories=lsGet(K.stories,null);
+if(!Array.isArray(stories)) stories=[];
+if(!lsGet(K.seeded,false)){
+  stories=clone(DEFAULTS).concat(stories);
+  lsSet(K.stories,stories); lsSet(K.seeded,true);
+}
+function saveStories(){lsSet(K.stories,stories);}
+function getStory(id){for(var i=0;i<stories.length;i++) if(stories[i].id===id) return stories[i]; return null;}
+
+/* ---------- saves (cache) ---------- */
+var saves={};
+function freshSave(id){return {id:id,messages:[],summary:'',sumIdx:0,ended:false,turns:0,updated:0};}
+function peekSave(id){
+  if(saves[id]) return saves[id];
+  var sv=lsGet(K.save(id),null);
+  if(sv&&Array.isArray(sv.messages)){saves[id]=sv;return sv;}
+  return null;
+}
+function getSave(id){var sv=peekSave(id); if(!sv){sv=freshSave(id);saves[id]=sv;} return sv;}
+function persist(sv){sv.updated=Date.now();lsSet(K.save(sv.id),sv);}
+function dropSave(id){delete saves[id];lsDel(K.save(id));}
+
+/* ---------- parsing da resposta da IA ---------- */
+function cleanMd(t){
+  return t.replace(/\*\*([^*]+)\*\*/g,'$1')
+          .replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?;:]|$)/g,'$1$2')
+          .replace(/^#{1,6}\s*/gm,'').replace(/`/g,'').replace(/\n{3,}/g,'\n\n').trim();
+}
+function cleanOpt(l){
+  return l.replace(/^\s*(?:[-\u2013\u2014\u2022*\u00b7>]|\d+[.)])\s*/,'').replace(/[*_`]/g,'').trim();
+}
+function parseReply(raw){
+  var t=String(raw==null?'':raw).replace(/\r/g,'').replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/<think>[\s\S]*$/i,'').trim();
+  var end=/\[\s*FIM\s*\]/i.test(t);
+  t=t.replace(/\[\s*FIM\s*\]/ig,'').trim();
+  var opts=[];
+  var m=t.search(/(^|\n)[ \t>*_#-]*op[\u00e7c][\u00f5o]es[ \t*_]*:/i);
+  if(m>=0){
+    var tail=t.slice(m).replace(/^\n/,'');
+    t=t.slice(0,m).trim();
+    opts=tail.split('\n').slice(1).map(cleanOpt).filter(function(x){return x&&x.length<140;}).slice(0,4);
+  }
+  t=cleanMd(t);
+  return {text:t,opts:end?[]:opts,end:end};
+}
+
+/* ---------- prompt ---------- */
+function lengthRule(){
+  var l=settings.length;
+  if(l==='longo') return 'dois a quatro parágrafos';
+  if(l==='medio') return 'um a dois parágrafos';
+  return 'um único parágrafo de 3 a 5 frases';
+}
+function systemPrompt(st,sv){
+  var s='Você é o Mestre de um RPG de mesa narrado em texto, jogando com UMA pessoa. Escreva sempre em português do Brasil.\n\n'+
+   'HISTÓRIA: '+st.title+(st.genre?' ('+st.genre+')':'')+'\n'+
+   (st.premise?'MUNDO E SITUAÇÃO: '+st.premise+'\n':'')+
+   (st.character?'PERSONAGEM DO JOGADOR: '+st.character+'\n':'')+
+   (st.ending?'DESFECHO: a história termina quando: '+st.ending+' Quando isso acontecer de forma clara, escreva a cena final e termine a resposta com a marca [FIM] (sem opções). Nunca use [FIM] antes disso.\n':'DESFECHO: não há final definido. Conduza a história enquanto o jogador quiser e não use [FIM].\n')+
+   '\nREGRAS:\n'+
+   '- Narre em segunda pessoa ("você"), no presente da cena.\n'+
+   '- O jogador pode tentar qualquer coisa escrevendo livremente. Reaja ao que ele escreveu e mude o rumo da história conforme as ações dele. Nunca decida ações, falas ou pensamentos do personagem dele.\n'+
+   '- Os outros personagens têm personalidade, objetivos e segredos próprios, falam e agem de forma consistente (diálogos com travessão ou aspas).\n'+
+   '- Se a mensagem do jogador trouxer "[Dado d20: N]", use como resultado da ação: 1 falha crítica; 2 a 9 falha; 10 a 14 sucesso parcial ou com custo; 15 a 19 sucesso; 20 sucesso crítico. Mostre o resultado na narração, sem citar regras nem números. Se a ação for trivial, ignore o dado.\n'+
+   '- Toda ação tem consequência real. Mantenha o ritmo, introduza complicações e não repita cenas nem frases.\n'+
+   '- Tamanho da narração: '+lengthRule()+'.\n'+
+   '- FORMATO OBRIGATÓRIO: narração em texto puro, sem markdown, asteriscos nem títulos. Depois, uma linha "OPÇÕES:" seguida de exatamente 3 linhas começando com "- ", cada uma uma ação curta (até 8 palavras) e diferente das outras.\n';
+  if(sv.summary) s+='\nMEMÓRIA DO QUE JÁ ACONTECEU (resumo): '+sv.summary+'\n';
+  return s;
+}
+function toApiText(m){
+  if(m.role==='user') return m.text+(m.roll?'\n[Dado d20: '+m.roll+']':'');
+  var t=m.text;
+  if(m.opts&&m.opts.length) t+='\n\nOPÇÕES:\n'+m.opts.map(function(o){return '- '+o;}).join('\n');
+  if(m.end) t+='\n[FIM]';
+  return t;
+}
+function buildMsgs(sv){
+  var arr=sv.messages.slice(sv.sumIdx||0).map(function(m){return {role:m.role,content:toApiText(m)};});
+  if(!arr.length||arr[0].role!=='user') arr.unshift({role:'user',content:'Comece a aventura com a cena de abertura.'});
+  return arr;
+}
+
+/* ---------- provedores de IA ---------- */
+function http(url,opts,ms){
+  var c=new AbortController();
+  var to=setTimeout(function(){c.abort();},ms||25000);
+  opts.signal=c.signal;
+  return fetch(url,opts).then(function(r){
+    return r.text().then(function(txt){
+      if(!r.ok){var e=new Error('HTTP '+r.status+': '+txt.slice(0,200));e.status=r.status;throw e;}
+      return txt;
+    });
+  }).catch(function(e){
+    if(e&&e.name==='AbortError') throw new Error('tempo esgotado (25s)');
+    if(e&&/load failed|failed to fetch|networkerror/i.test(e.message||'')) throw new Error(e.message+' (sem internet, bloqueio ou o serviço recusou o acesso)');
+    throw e;
+  }).then(function(v){clearTimeout(to);return v;},function(e){clearTimeout(to);throw e;});
+}
+function openaiChat(url,key,model,system,msgs,extra){
+  var body={model:model,messages:[{role:'system',content:system}].concat(msgs),temperature:0.9,max_tokens:1200};
+  if(extra) Object.keys(extra).forEach(function(k){body[k]=extra[k];});
+  var headers={'Content-Type':'application/json'};
+  if(key) headers.Authorization='Bearer '+key;
+  return http(url,{method:'POST',headers:headers,body:JSON.stringify(body)}).then(function(txt){
+    var j;
+    try{j=JSON.parse(txt);}catch(e){ if(txt&&txt.trim()&&!/^\s*</.test(txt)) return txt; throw new Error('resposta inválida: '+txt.slice(0,150)); }
+    var c=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;
+    if(!c||!String(c).trim()) throw new Error('resposta vazia: '+txt.slice(0,200));
+    return String(c);
+  });
+}
+var OVH_URL='https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions';
+var BIG={max_tokens:2500};
+// ordem do modo Automático (LLM7 primeiro: foi a que funcionou bem no teste real)
+var CATALOG=[
+  {id:'llm7',label:'LLM7 · padrão',api:'llm7',model:'default'},
+  {id:'ovh-llama70',label:'OVHcloud · Llama 3.3 70B',api:'ovh',model:'Meta-Llama-3_3-70B-Instruct'},
+  {id:'ovh-gptoss120',label:'OVHcloud · GPT-OSS 120B',api:'ovh',model:'gpt-oss-120b',extra:BIG},
+  {id:'ovh-mistral',label:'OVHcloud · Mistral Small 3.2',api:'ovh',model:'Mistral-Small-3.2-24B-Instruct-2506'},
+  {id:'ovh-qwen3',label:'OVHcloud · Qwen3 32B',api:'ovh',model:'Qwen3-32B',extra:BIG},
+  {id:'poll-openai',label:'Pollinations · OpenAI',api:'poll',model:'openai'},
+  {id:'poll-mistral',label:'Pollinations · Mistral',api:'poll',model:'mistral'},
+  {id:'ovh-gptoss20',label:'OVHcloud · GPT-OSS 20B',api:'ovh',model:'gpt-oss-20b',extra:BIG},
+  {id:'ovh-nemo',label:'OVHcloud · Mistral Nemo 12B',api:'ovh',model:'Mistral-Nemo-Instruct-2407'},
+  {id:'ovh-llama8',label:'OVHcloud · Llama 3.1 8B',api:'ovh',model:'Llama-3.1-8B-Instruct'}
+];
+if(settings.provider!=='auto'&&settings.provider!=='custom'&&!CATALOG.some(function(e){return e.id===settings.provider;})) settings.provider='auto';
+function customEntry(){return {id:'custom',label:'Meu servidor',api:'custom',model:settings.custom.model};}
+var failedAt={};
+function runEntry(e,system,msgs){
+  // OVH e Pollinations anônimos não levam Authorization; LLM7 aceita um token qualquer
+  if(e.api==='ovh') return openaiChat(OVH_URL,'',e.model,system,msgs,e.extra);
+  if(e.api==='llm7') return openaiChat('https://api.llm7.io/v1/chat/completions','unused',e.model,system,msgs,e.extra);
+  if(e.api==='poll'){var x={private:true};if(e.extra)Object.keys(e.extra).forEach(function(k){x[k]=e.extra[k];});return openaiChat('https://text.pollinations.ai/openai','',e.model,system,msgs,x);}
+  return openaiChat(settings.custom.url,'',settings.custom.model,system,msgs,e.extra);
+}
+function entryList(){
+  var p=settings.provider;
+  if(p==='custom') return [customEntry()];
+  var one=CATALOG.filter(function(e){return e.id===p;});
+  if(p!=='auto'&&one.length) return one;
+  var now=Date.now(), ok=[], bad=[];
+  CATALOG.forEach(function(e){(failedAt[e.id]&&now-failedAt[e.id]<90000?bad:ok).push(e);});
+  var out=[];
+  if(settings.custom.url&&settings.custom.model) out.push(customEntry());
+  return out.concat(ok,bad);
+}
+var lastProvider='';
+function callAI(system,msgs){
+  var order=entryList(), errors=[], i=0;
+  function next(){
+    if(i>=order.length) return Promise.reject(new Error(errors.join(' | ')));
+    var e=order[i++];
+    if(e.api==='custom'&&(!settings.custom.url||!settings.custom.model)){var m0=e.id+': faltam URL e modelo do servidor próprio';errors.push(m0);logBug('ia',m0);return next();}
+    return runEntry(e,system,msgs).then(function(txt){delete failedAt[e.id];lastProvider=e.label;return {text:txt,provider:e.label};},function(err){
+      var m=e.id+': '+(err&&err.message?err.message:err);
+      failedAt[e.id]=Date.now(); errors.push(m); logBug('ia',m); return next();
+    });
+  }
+  return next();
+}
+
+/* ---------- estado da interface ---------- */
+var S={screen:'home',storyId:null,editId:null,busy:false,error:null,menuOpen:false};
+var app=$('#app'), modalRoot=$('#modal-root');
+
+function header(title,back){
+  return '<div class="top">'+
+    (back?'<button class="ico" data-act="back" aria-label="Voltar">\u2039</button>':'')+
+    '<h1>'+esc(title)+'</h1>'+
+    (S.screen==='play'?'<button class="ico" data-act="menu" aria-label="Menu">\u22EF</button>':'')+
+    '<button class="ico" data-act="bug" aria-label="Bugs">\uD83D\uDCD6<span class="badge"></span></button>'+
+    (S.screen!=='settings'?'<button class="ico" data-act="settings" aria-label="Configurações">\u2699\uFE0F</button>':'')+
+  '</div>';
+}
+function render(){
+  S.menuOpen=false;
+  if(S.screen==='home') renderHome();
+  else if(S.screen==='edit') renderEdit();
+  else if(S.screen==='play') renderPlay();
+  else if(S.screen==='settings') renderSettings();
+  updateBadge();
+}
+function go(screen,extra){
+  S.screen=screen; S.error=null;
+  if(extra) Object.keys(extra).forEach(function(k){S[k]=extra[k];});
+  render();
+}
+
+/* ---------- Home ---------- */
+function renderHome(){
+  var cards=stories.map(function(st){
+    var sv=peekSave(st.id), turns=sv?sv.turns:0;
+    var status=sv&&sv.messages.length?(sv.ended?'História concluída':'Parou no turno '+turns+'. Toque em Continuar.'):'';
+    return '<div class="card"><div class="tag">'+esc(st.genre||'Aventura')+'</div><h3>'+esc(st.title)+'</h3>'+
+      '<p class="pm">'+esc(st.premise||'Sem descrição.')+'</p>'+
+      (status?'<p class="st">'+esc(status)+'</p>':'')+
+      '<div class="row"><button class="btn pri" data-act="play" data-id="'+esc(st.id)+'">'+(sv&&sv.messages.length&&!sv.ended?'Continuar':'Jogar')+'</button>'+
+      (sv&&sv.messages.length?'<button class="btn" data-act="restart-card" data-id="'+esc(st.id)+'">Recomeçar</button>':'')+
+      '<button class="btn" data-act="edit" data-id="'+esc(st.id)+'">Editar</button>'+
+      '<button class="btn bad" data-act="del" data-id="'+esc(st.id)+'">Excluir</button></div></div>';
+  }).join('');
+  var missing=DEFAULTS.some(function(d){return !getStory(d.id);});
+  app.innerHTML='<div class="screen">'+header('RPG de mesa com IA',false)+
+   '<div class="page"><div class="hero"><h2>Sua mesa de RPG, com a IA como mestre.</h2><p>Escolha uma história ou crie a sua. O jogo salva sozinho e você continua de onde parou.</p></div>'+
+   '<button class="btn pri full" data-act="new" style="margin-bottom:16px">+ Criar história</button>'+
+   (cards||'<div class="empty"><b>Nenhuma história por aqui</b>Crie a sua para começar a jogar.</div>')+
+   '<div class="row" style="margin-top:6px">'+
+   (missing?'<button class="btn ghost" data-act="restore-defaults">Restaurar histórias padrão</button>':'')+
+   (stories.length?'<button class="btn bad" data-act="del-all">Apagar todas</button>':'')+
+   '</div></div></div>';
+}
+
+/* ---------- Editor ---------- */
+function renderEdit(){
+  var st=S.editId?getStory(S.editId):null;
+  st=st||{title:'',genre:'',premise:'',character:'',opening:'',ending:''};
+  app.innerHTML='<div class="screen">'+header(S.editId?'Editar história':'Nova história',true)+
+   '<div class="page"><form id="edform" autocomplete="off">'+
+   '<label for="f-title" style="margin-top:0">Título</label><input id="f-title" maxlength="80" value="'+esc(st.title)+'" placeholder="Ex.: O Farol de Brumavale">'+
+   '<label for="f-genre">Gênero e tom <small>Opcional. Ex.: terror, comédia, ficção científica</small></label><input id="f-genre" maxlength="60" value="'+esc(st.genre)+'">'+
+   '<label for="f-premise">Mundo e situação <small>O mestre usa isso como base: lugar, época, conflito, personagens importantes</small></label><textarea id="f-premise" rows="5">'+esc(st.premise)+'</textarea>'+
+   '<label for="f-char">Seu personagem <small>Quem é você nessa história</small></label><textarea id="f-char" rows="3">'+esc(st.character)+'</textarea>'+
+   '<label for="f-open">Cena inicial <small>Opcional. Se ficar vazio, a IA escreve a abertura</small></label><textarea id="f-open" rows="4">'+esc(st.opening)+'</textarea>'+
+   '<label for="f-end">Desfecho <small>Opcional. O que precisa acontecer para a história acabar</small></label><textarea id="f-end" rows="3">'+esc(st.ending)+'</textarea>'+
+   (S.editId?'<p style="color:var(--mu);font-size:13px;margin:12px 0 0">As mudanças valem para os próximos turnos. O progresso salvo continua.</p>':'')+
+   '<div class="row" style="margin-top:20px"><button type="submit" class="btn pri" style="flex:1">Salvar história</button><button type="button" class="btn" data-act="back">Cancelar</button></div>'+
+   '</form></div></div>';
+}
+function saveEdit(){
+  var title=$('#f-title').value.trim();
+  if(!title){alert('Dê um título para a história.');return;}
+  var data={title:title,genre:$('#f-genre').value.trim(),premise:$('#f-premise').value.trim(),character:$('#f-char').value.trim(),opening:$('#f-open').value.trim(),ending:$('#f-end').value.trim()};
+  var st=S.editId?getStory(S.editId):null;
+  if(st){
+    if(st.opening!==data.opening) delete st.openingOpts;
+    Object.keys(data).forEach(function(k){st[k]=data[k];});
+  }else{
+    data.id=uid(); data.created=Date.now(); stories.unshift(data);
+  }
+  saveStories(); go('home');
+}
+
+/* ---------- Jogo ---------- */
+function renderPlay(){
+  var st=getStory(S.storyId);
+  if(!st){go('home');return;}
+  app.innerHTML='<div class="screen play">'+header(st.title,true)+
+   '<div class="menu" id="menu" hidden>'+
+   '<button data-act="undo">\u21B6 Desfazer último turno</button>'+
+   '<button data-act="regen">\u21BB Gerar outra resposta</button>'+
+   '<button data-act="edit-current">\u270E Editar história</button>'+
+   '<button data-act="restart">\u27F2 Recomeçar do zero</button></div>'+
+   '<div class="log" id="log"></div>'+
+   '<form class="composer" id="composer" autocomplete="off">'+
+   '<button type="button" class="dice'+(settings.dice?' on':'')+'" data-act="dice" id="dicebtn" aria-label="Dado d20">\uD83C\uDFB2 d20</button>'+
+   '<textarea id="inp" rows="1" placeholder="O que você faz ou diz?"></textarea>'+
+   '<button type="submit" class="send" id="sendbtn">Enviar</button></form></div>';
+  renderMessages(true);
+}
+function rollClass(r){return r===20?'roll c20':(r===1?'roll c1':'roll');}
+function paras(t){return String(t).split(/\n+/).filter(Boolean).map(function(p){return '<p>'+esc(p)+'</p>';}).join('');}
+function renderMessages(forceBottom){
+  if(S.screen!=='play') return;
+  var st=getStory(S.storyId), log=$('#log');
+  if(!st||!log) return;
+  var sv=getSave(st.id), h='';
+  sv.messages.forEach(function(m){
+    if(m.role==='assistant') h+='<div class="msg ai">'+paras(m.text)+'</div>';
+    else h+='<div class="msg me">'+(m.roll?'<div class="'+rollClass(m.roll)+'">\uD83C\uDFB2 '+m.roll+'</div><br>':'')+esc(m.text).replace(/\n/g,'<br>')+'</div>';
+  });
+  var last=sv.messages[sv.messages.length-1];
+  if(S.busy) h+='<div class="typing">O mestre está escrevendo<i></i><i></i><i></i></div>';
+  else if(S.error) h+='<div class="err"><p><b>Não consegui falar com a IA.</b><br>'+esc(S.error)+'</p><div class="row"><button class="btn pri" data-act="retry">Tentar de novo</button><button class="btn" data-act="bug">Ver bug</button><button class="btn" data-act="settings">Configurar IA</button></div></div>';
+  else if(sv.ended) h+='<div class="end"><b>Fim da história</b><div class="row" style="justify-content:center"><button class="btn pri" data-act="restart">Jogar de novo</button><button class="btn" data-act="keep-going">Continuar mesmo assim</button></div></div>';
+  else if(last&&last.role==='assistant'&&last.opts&&last.opts.length){
+    h+='<div class="opts">'+last.opts.map(function(o,i){return '<button class="opt" data-act="opt" data-i="'+i+'">'+esc(o)+'</button>';}).join('')+'</div>';
+  }
+  log.innerHTML=h;
+  var send=$('#sendbtn'); if(send) send.disabled=S.busy;
+  var btns=document.querySelectorAll('#menu button');
+  for(var i=0;i<btns.length;i++) btns[i].disabled=S.busy&&btns[i].getAttribute('data-act')!=='edit-current';
+  if(forceBottom||true) log.scrollTop=log.scrollHeight;
+}
+function startIfEmpty(){
+  var st=getStory(S.storyId); if(!st) return;
+  var sv=getSave(st.id);
+  if(sv.messages.length) return;
+  if(st.opening){
+    sv.messages.push({role:'assistant',text:st.opening,opts:(st.openingOpts||[]).slice(),end:false});
+    persist(sv); renderMessages(true);
+  }else runAI(st,sv);
+}
+function runAI(st,sv){
+  S.busy=true; S.error=null; renderMessages(true);
+  return callAI(systemPrompt(st,sv),buildMsgs(sv)).then(function(res){
+    var p=parseReply(res.text);
+    if(!p.text) throw new Error('A IA devolveu uma resposta vazia.');
+    sv.messages.push({role:'assistant',text:p.text,opts:p.opts,end:p.end});
+    if(p.end) sv.ended=true;
+    sv.turns=(sv.turns||0)+1;
+    persist(sv);
+    maybeSummarize(st,sv);
+  }).catch(function(e){
+    S.error=(e&&e.message)?e.message:String(e);
+    logBug('ia-final','Todos os provedores falharam: '+S.error);
+  }).then(function(){
+    S.busy=false;
+    if(S.screen==='play'&&S.storyId===st.id) renderMessages(true);
+  });
+}
+function act(text){
+  if(S.busy) return;
+  text=String(text||'').trim(); if(!text) return;
+  var st=getStory(S.storyId); if(!st) return;
+  var sv=getSave(st.id);
+  var m={role:'user',text:text};
+  if(settings.dice) m.roll=d20();
+  sv.messages.push(m); persist(sv);
+  runAI(st,sv);
+}
+function maybeSummarize(st,sv){
+  var start=sv.sumIdx||0, end=sv.messages.length-8;
+  if(sv.messages.length-start<=18||end<=start) return;
+  // o recorte recente deve começar numa mensagem do jogador
+  while(end<sv.messages.length&&sv.messages[end].role!=='user') end++;
+  if(end>=sv.messages.length||end<=start) return;
+  var chunk=sv.messages.slice(start,end).map(function(m){
+    return (m.role==='user'?'Jogador: ':'Mestre: ')+m.text.slice(0,700)+(m.roll?' [d20: '+m.roll+']':'');
+  }).join('\n');
+  var prompt='Atualize o resumo desta aventura de RPG em português, em até 180 palavras, preservando nomes, lugares, itens, relações entre personagens, decisões do jogador e mistérios em aberto.\n\nRESUMO ANTERIOR: '+(sv.summary||'(nenhum)')+'\n\nNOVOS EVENTOS:\n'+chunk+'\n\nResponda só com o novo resumo.';
+  callAI('Você resume sessões de RPG com fidelidade.',[{role:'user',content:prompt}]).then(function(res){
+    var s=cleanMd(res.text);
+    if(s&&sv.messages.length>=end&&(sv.sumIdx||0)<end){sv.summary=s.slice(0,1500);sv.sumIdx=end;persist(sv);}
+  }).catch(function(e){logBug('resumo','Falha ao resumir (o jogo continua): '+(e&&e.message));});
+}
+function undo(){
+  if(S.busy) return;
+  var st=getStory(S.storyId), sv=getSave(st.id);
+  if(!sv.messages.length) return;
+  if(sv.messages[sv.messages.length-1].role==='assistant'){sv.messages.pop();sv.turns=Math.max(0,(sv.turns||1)-1);}
+  if(sv.messages.length&&sv.messages[sv.messages.length-1].role==='user') sv.messages.pop();
+  if(sv.sumIdx>sv.messages.length) sv.sumIdx=sv.messages.length;
+  sv.ended=false; S.error=null; persist(sv);
+  if(!sv.messages.length) startIfEmpty(); else renderMessages(true);
+}
+function regen(){
+  if(S.busy) return;
+  var st=getStory(S.storyId), sv=getSave(st.id);
+  var last=sv.messages[sv.messages.length-1];
+  if(!last) return;
+  if(last.role==='assistant'){
+    var prev=sv.messages[sv.messages.length-2];
+    if(!prev&&st.opening){alert('A cena inicial é fixa. Edite a história para mudá-la.');return;}
+    sv.messages.pop(); sv.turns=Math.max(0,(sv.turns||1)-1); sv.ended=false; persist(sv);
+  }
+  runAI(st,sv);
+}
+function restart(){
+  if(S.busy) return;
+  if(!confirm('Recomeçar do zero? O progresso salvo desta história será apagado.')) return;
+  var st=getStory(S.storyId); if(!st) return;
+  dropSave(st.id); S.error=null;
+  render(); startIfEmpty();
+}
+
+/* ---------- Configurações ---------- */
+function sel(path,val,opts){
+  return '<select data-set="'+path+'">'+opts.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===val?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
+}
+function fld(path,label,val,type,ph){
+  return '<label>'+label+'</label><input data-set="'+path+'" type="'+(type||'text')+'" value="'+esc(val)+'" placeholder="'+esc(ph||'')+'" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">';
+}
+function renderSettings(){
+  var s=settings;
+  app.innerHTML='<div class="screen">'+header('Configurações',true)+'<div class="page">'+
+   '<h3 style="margin:0 0 4px;font-size:16px">Inteligência artificial</h3>'+
+   '<p style="margin:0 0 4px;color:var(--mu);font-size:14px">Tudo gratuito e sem chave. No Automático o app começa pela melhor IA e, se ela falhar ou estiver ocupada, passa para a próxima da lista.</p>'+
+   '<label>Provedor</label>'+sel('provider',s.provider,[['auto','Automático (melhor primeiro)']].concat(CATALOG.map(function(e){return [e.id,e.label];}),[['custom','Meu servidor (Ollama ou compatível)']]))+
+   '<label>Tamanho das respostas</label>'+sel('length',s.length,[['curto','Curto (um parágrafo)'],['medio','Médio (1 a 2 parágrafos)'],['longo','Longo (2 a 4 parágrafos)']])+
+   '<div class="chk"><input type="checkbox" id="chk-dice" data-set="dice"'+(s.dice?' checked':'')+'><label for="chk-dice" style="margin:0;color:var(--tx);font-size:15px">Rolar d20 a cada ação</label></div>'+
+   '<div class="row" style="margin-top:16px"><button class="btn pri" data-act="test-ai" id="testbtn">Testar IA</button></div><div class="res" id="testres"></div>'+
+   '<details><summary>Meu servidor (Ollama ou compatível)</summary>'+
+    '<p style="color:var(--mu);font-size:13px;margin:6px 0 0">Um Ollama ou outro servidor compatível com OpenAI. No modo Automático ele é tentado primeiro. Precisa permitir acesso do navegador (CORS).</p>'+
+    fld('custom.url','URL completa (…/v1/chat/completions)',s.custom.url,'url','http://192.168.0.10:11434/v1/chat/completions')+fld('custom.model','Modelo',s.custom.model,'text','llama3.2')+
+    '<div style="height:14px"></div></details>'+
+   '<div class="sec"><h3>Backup do progresso</h3><p>O save fica no cache do Safari. O Safari pode apagar dados de sites que você não abre há uns 7 dias. Para proteger, use Compartilhar \u2192 Adicionar à Tela de Início e guarde um backup.</p>'+
+   '<div class="row"><button class="btn" data-act="backup-copy">Copiar backup</button><button class="btn" data-act="backup-restore">Restaurar backup</button></div></div>'+
+   '<div class="sec"><h3>Dados</h3><p>Versão '+VERSION+'.</p><div class="row"><button class="btn bad" data-act="wipe-all">Apagar tudo (histórias, saves e configurações)</button></div></div>'+
+  '</div></div>';
+}
+function testAI(){
+  var res=$('#testres'), btn=$('#testbtn');
+  res.className='res'; res.textContent='Testando…'; btn.disabled=true;
+  callAI('Você é um assistente de teste.',[{role:'user',content:'Responda somente com a palavra: ok'}]).then(function(r){
+    res.className='res ok'; res.textContent='Funcionou com: '+r.provider+'\nResposta: '+r.text.slice(0,80);
+  }).catch(function(e){
+    res.className='res no'; res.textContent='Falhou.\n'+e.message+'\n\nToque em \uD83D\uDCD6 para copiar o relatório.';
+  }).then(function(){btn.disabled=false;});
+}
+
+/* ---------- Bugs ---------- */
+function report(note){
+  var st=S.storyId?getStory(S.storyId):null, sv=st?peekSave(st.id):null;
+  var L=[];
+  L.push('RELATÓRIO DE BUGS: RPG de mesa com IA v'+VERSION);
+  L.push('Data: '+new Date().toString());
+  L.push('Aparelho: '+navigator.userAgent);
+  L.push('Janela: '+window.innerWidth+'x'+window.innerHeight+' | standalone: '+(window.navigator.standalone===true));
+  L.push('Tela: '+S.screen+(st?' | História: '+st.title:''));
+  if(sv) L.push('Save: '+sv.messages.length+' mensagens, '+sv.turns+' turnos, encerrada: '+sv.ended+', resumo: '+(sv.summary?'sim':'não'));
+  L.push('IA escolhida: '+settings.provider+' | último que respondeu: '+(lastProvider||'nenhum')+' | tamanho: '+settings.length+' | dado: '+settings.dice);
+  L.push('Servidor próprio: '+(settings.custom.url?'sim':'não'));
+  if(S.error) L.push('Erro na tela: '+S.error);
+  if(note) L.push('\nO QUE EU VI: '+note);
+  L.push('\nREGISTROS ('+logs.length+'):');
+  if(!logs.length) L.push('(nenhum erro registrado)');
+  logs.slice(-25).forEach(function(e){L.push('['+e.t.slice(11,19)+'] '+e.type+': '+e.msg+(e.extra?'\n    '+e.extra.replace(/\n/g,'\n    '):''));});
+  return L.join('\n');
+}
+function copyText(text){
+  function fallback(){
+    return new Promise(function(res,rej){
+      var ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly','');
+      ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px';
+      document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0,text.length);
+      var ok=false; try{ok=document.execCommand('copy');}catch(e){}
+      document.body.removeChild(ta); ok?res():rej(new Error('copy falhou'));
+    });
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText) return navigator.clipboard.writeText(text).catch(fallback);
+  return fallback();
+}
+function openBugModal(){
+  modalRoot.innerHTML='<div class="modal" data-act="modal-bg"><div class="sheet" id="sheet">'+
+   '<h3>Bugs</h3><p>Descreva o que aconteceu (opcional), toque em Copiar e cole no Claude.</p>'+
+   '<input id="bugnote" placeholder="O que você viu de errado?" autocomplete="off">'+
+   '<pre class="rep" id="rep"></pre><div class="row">'+
+   '<button class="btn pri" data-act="bug-copy" id="bugcopy" style="flex:1">Copiar bugs</button>'+
+   '<button class="btn" data-act="bug-clear">Limpar registros</button>'+
+   '<button class="btn" data-act="modal-close">Fechar</button></div></div></div>';
+  refreshReport();
+  $('#bugnote').addEventListener('input',refreshReport);
+}
+function refreshReport(){var r=$('#rep'),n=$('#bugnote');if(r)r.textContent=report(n?n.value.trim():'');}
+function closeModal(){modalRoot.innerHTML='';}
+
+/* ---------- Backup ---------- */
+function backupData(){
+  var data={app:'rpg-mesa-ia',version:1,stories:stories,saves:{},settings:merge(DEF_SETTINGS,{}),seeded:true};
+  stories.forEach(function(st){var sv=peekSave(st.id);if(sv)data.saves[st.id]=sv;});
+  return JSON.stringify(data);
+}
+function openRestoreModal(){
+  modalRoot.innerHTML='<div class="modal" data-act="modal-bg"><div class="sheet"><h3>Restaurar backup</h3><p>Cole aqui o texto do backup. Isso substitui as histórias e saves atuais.</p>'+
+   '<textarea id="bkta" rows="6" placeholder="Cole o backup"></textarea><div class="row" style="margin-top:12px"><button class="btn pri" data-act="restore-go" style="flex:1">Restaurar</button><button class="btn" data-act="modal-close">Cancelar</button></div></div></div>';
+}
+function restoreBackup(){
+  var raw=($('#bkta')||{}).value||'';
+  try{
+    var d=JSON.parse(raw.trim());
+    if(!d||d.app!=='rpg-mesa-ia'||!Array.isArray(d.stories)) throw new Error('Este texto não é um backup do app.');
+    stories.forEach(function(st){dropSave(st.id);});
+    stories=d.stories; saveStories();
+    saves={}; Object.keys(d.saves||{}).forEach(function(id){var sv=d.saves[id]; if(sv&&Array.isArray(sv.messages)){saves[id]=sv;persist(sv);}});
+    lsSet(K.seeded,true); closeModal(); go('home');
+  }catch(e){alert('Não consegui restaurar: '+e.message);}
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click',function(ev){
+  var menu=$('#menu');
+  if(menu&&!menu.hidden&&!ev.target.closest('.menu')&&!ev.target.closest('[data-act="menu"]')){menu.hidden=true;}
+  var el=ev.target.closest('[data-act]'); if(!el) return;
+  var a=el.getAttribute('data-act'), id=el.getAttribute('data-id');
+  if(a==='modal-bg'){ if(ev.target===el) closeModal(); return; }
+  if(menu&&el.closest('.menu')) menu.hidden=true;
+  switch(a){
+    case 'back': go('home'); break;
+    case 'settings': closeModal(); go('settings'); break;
+    case 'new': go('edit',{editId:null}); break;
+    case 'edit': go('edit',{editId:id}); break;
+    case 'edit-current': go('edit',{editId:S.storyId}); break;
+    case 'play': S.storyId=id; go('play'); startIfEmpty(); break;
+    case 'restart-card':
+      var rs=getStory(id);
+      if(rs&&confirm('Recomeçar "'+rs.title+'" do zero? O progresso salvo será apagado, mas a história continua na lista.')){dropSave(id);render();}
+      break;
+    case 'del':
+      var st=getStory(id);
+      if(st&&confirm('Excluir "'+st.title+'" e o progresso salvo? Isso não pode ser desfeito.')){
+        stories=stories.filter(function(x){return x.id!==id;}); saveStories(); dropSave(id); render();
+      } break;
+    case 'del-all':
+      if(confirm('Apagar TODAS as histórias e saves, inclusive as padrão?')&&confirm('Tem certeza? Não dá para desfazer.')){
+        stories.forEach(function(x){dropSave(x.id);}); stories=[]; saveStories(); render();
+      } break;
+    case 'restore-defaults':
+      DEFAULTS.forEach(function(d){if(!getStory(d.id)) stories.push(clone(d));}); saveStories(); render(); break;
+    case 'menu': if(menu) menu.hidden=!menu.hidden; ev.stopPropagation(); break;
+    case 'undo': undo(); break;
+    case 'regen': regen(); break;
+    case 'restart': restart(); break;
+    case 'keep-going':
+      var s2=getSave(S.storyId); s2.ended=false; persist(s2); renderMessages(true); break;
+    case 'retry':
+      var st2=getStory(S.storyId), sv2=getSave(S.storyId);
+      if(sv2.messages.length&&sv2.messages[sv2.messages.length-1].role==='assistant'){ regen(); } else runAI(st2,sv2);
+      break;
+    case 'opt':
+      var sv3=getSave(S.storyId), last=sv3.messages[sv3.messages.length-1];
+      if(last&&last.opts) act(last.opts[parseInt(el.getAttribute('data-i'),10)]); break;
+    case 'dice':
+      settings.dice=!settings.dice; saveSettings(); el.classList.toggle('on',settings.dice); break;
+    case 'bug': openBugModal(); break;
+    case 'bug-copy':
+      refreshReport();
+      copyText($('#rep').textContent).then(function(){var b=$('#bugcopy');if(b)b.textContent='Copiado \u2713';},function(){
+        var r=$('#rep'); if(r){var rg=document.createRange();rg.selectNodeContents(r);var sl=window.getSelection();sl.removeAllRanges();sl.addRange(rg);}
+        var b=$('#bugcopy');if(b)b.textContent='Selecionei o texto: use Copiar do iPhone';
+      }); break;
+    case 'bug-clear': logs=[]; try{localStorage.removeItem(K.logs);}catch(e){} updateBadge(); refreshReport(); break;
+    case 'modal-close': closeModal(); break;
+    case 'test-ai': testAI(); break;
+    case 'backup-copy':
+      copyText(backupData()).then(function(){alert('Backup copiado. Cole em um lugar seguro, como o app Notas.');},function(){alert('Não consegui copiar o backup.');}); break;
+    case 'backup-restore': openRestoreModal(); break;
+    case 'restore-go': restoreBackup(); break;
+    case 'wipe-all':
+      if(confirm('Apagar tudo, incluindo histórias, saves e configurações?')){
+        stories.forEach(function(x){dropSave(x.id);});
+        [K.stories,K.seeded,K.settings,K.logs].forEach(lsDel);
+        location.reload();
+      } break;
+  }
+});
+document.addEventListener('submit',function(ev){
+  ev.preventDefault();
+  if(ev.target.id==='composer'){
+    var inp=$('#inp'), v=inp.value;
+    if(!v.trim()||S.busy) return;
+    inp.value=''; inp.style.height='auto'; act(v);
+  }else if(ev.target.id==='edform') saveEdit();
+});
+document.addEventListener('input',function(ev){
+  var t=ev.target;
+  if(t.id==='inp'){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,120)+'px';}
+  var p=t.getAttribute&&t.getAttribute('data-set');
+  if(p&&t.type!=='checkbox'&&t.tagName!=='SELECT'){setPath(settings,p,t.value.trim());saveSettings();}
+});
+document.addEventListener('change',function(ev){
+  var t=ev.target, p=t.getAttribute&&t.getAttribute('data-set');
+  if(!p) return;
+  setPath(settings,p,t.type==='checkbox'?t.checked:t.value); saveSettings();
+});
+
+/* ---------- viewport (teclado do iPhone) ---------- */
+function fit(){
+  var vv=window.visualViewport;
+  var h=vv?vv.height:window.innerHeight, top=vv?vv.offsetTop:0;
+  app.style.height=h+'px'; app.style.transform=top?'translateY('+top+'px)':'';
+  var log=$('#log'); if(log&&S.screen==='play') log.scrollTop=log.scrollHeight;
+}
+if(window.visualViewport){window.visualViewport.addEventListener('resize',fit);window.visualViewport.addEventListener('scroll',fit);}
+window.addEventListener('resize',fit);
+window.addEventListener('orientationchange',fit);
+
+/* ---------- início ---------- */
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(function(){}); }catch(e){}
+try{ fit(); render(); }
+catch(e){
+  logBug('inicio',e.message,e.stack);
+  app.innerHTML='<div class="page"><h2>Erro ao abrir o app</h2><p>Copie o texto abaixo e mande para o Claude.</p><pre class="rep">'+esc(report(''))+'</pre></div>';
+}
+})();
+</script>
+</body>
+</html>
